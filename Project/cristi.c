@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
@@ -19,50 +20,25 @@ typedef struct _file{
     char filetype;
     const char* owner;
     const char* group;
-}File; 
+    //time?
+    //acces rights
 
-void printFileInfo(File* f,int count,int fdOut) {
+    mode_t filemode;
 
-       printf("ENTRY %d: filename => %s\n\t ",++count,f->filename);
-       printf("inode => %lu\t hardlinks => %lu\t size => %lu\n\t",f->inode,f->hlinks,f->filesize);
-       printf("TYPE=> %c OWNID: %s GRPID: %s\n",f->filetype,f->owner,f->group);
+}File;
 
-    int w;
-    w = write(fdOut, &(f->filename), sizeof(f->filename));
-    if (w == -1) {
-        perror("writing filename to output file");
-        exit(errno);
-    }
-    w = write(fdOut, &(f->inode), sizeof(f->inode));
-    if (w == -1) {
-        perror("writing inode to output file");
-        exit(errno);
-    }
-    w = write(fdOut, &(f->filesize), sizeof(f->filesize));
-    if (w == -1) {
-        perror("writing filesize to output file");
-        exit(errno);
-    }
-    w = write(fdOut, &(f->hlinks), sizeof(f->hlinks));
-    if (w == -1) {
-        perror("writing hardlinks to output file");
-        exit(errno);
-    }
-    w = write(fdOut, &(f->filetype), sizeof(f->filetype));
-    if (w == -1) {
-        perror("writing filetype to output file");
-        exit(errno);
-    }
-    w = write(fdOut, &(f->owner), sizeof(f->owner));
-    if (w == -1) {
-        perror("writing owner to output file");
-        exit(errno);
-    }
-    w = write(fdOut, &(f->group), sizeof(f->group));
-    if (w == -1) {
-        perror("writing group to output file");
-        exit(errno);
-    }
+bool isSkippable(const char* filePath); //checks if path is crt or parent
+void printFileInfo(File* f,FILE* out); //prints f info to out file
+FILE* createSnapshot(File* f, const char* path); //creates snapshot file for file f in the given path
+char getEntryType(mode_t m); //converts filemode to readable type
+File* createFile( const char* filepath ); // allocates a structure and inserts metadata based on path
+void parseDir(const char* dirPath); //parses each entry of the given path and entries of found subdirectories
+
+void printFileInfo(File* f,FILE* out) {
+
+       fprintf(out,"ENTRY INFO: filename => %s\n\t ",f->filename);
+       fprintf(out,"inode => %lu\t hardlinks => %lu\t size => %lu\n\t",f->inode,f->hlinks,f->filesize);
+       fprintf(out,"TYPE=> %c OWNID: %s GRPID: %s\n",f->filetype,f->owner,f->group);
 } 
 
 char getEntryType(mode_t m) {
@@ -77,87 +53,114 @@ char getEntryType(mode_t m) {
     else return '?';
 }
 
-void parseDir(const char* dirName,int outputFile) {
+File* createFile( const char* filepath ) {
 
-    
+    struct stat statVar;
+
+    if ( stat(filepath,&statVar) == -1 ) {
+                perror("stat");
+                exit(3);
+    }
+
+    File* f = malloc(sizeof(File));
+    if( f == NULL ) {
+        perror("Allocation");
+    }
+
+    struct group *grp;
+    struct passwd *pwd;
+
+    pwd = getpwuid(statVar.st_uid);
+    const char* owner = ( pwd != NULL ) ? pwd->pw_name : "UNKNOWN";
+
+    grp = getgrgid(statVar.st_gid);
+    const char* group = (grp!=NULL) ? grp->gr_name : "UNKNOWN";
+
+     f->inode = statVar.st_ino;
+     f->filesize = statVar.st_size;
+     f->filetype = getEntryType(statVar.st_mode);
+     f->hlinks = statVar.st_nlink;
+     f->owner = owner;
+     f->group = group;
+     f->filemode = statVar.st_mode;
+
+     return f;
+}
+
+FILE* createSnapshot(File* f, const char* path) {
+
+    char snapshotPath[512];
+
+    snprintf(snapshotPath, sizeof(snapshotPath), "%s/%s_snapshot.txt", path, f->filename);
+
+    FILE* snapshotFile = fopen(snapshotPath, "w");
+    if (snapshotFile == NULL) {
+        perror("Unable to create snapshot file");
+        exit(6);
+    }
+
+    return snapshotFile;    
+}
+
+void parseDir(const char* dirPath) {
+
     DIR* dir;
     struct dirent* entry;
-    struct stat statVar;
-    int count=0;
+    File* f = NULL;
 
-    dir = opendir(dirName);
+    dir = opendir(dirPath);
     if( dir == NULL ) {
         perror("invalid directory");
         exit(2);
     }
 
     char pathBuf[512];
-    struct group *grp;
-    struct passwd *pwd;
 
     while( (entry = readdir(dir)) != NULL ) {
 
-            if( strcmp(entry->d_name,".") == 0 ) {
-                perror("skipping current dir");
-                continue;
-            }
-            if( strcmp(entry->d_name,"..") == 0 ) {
-                perror("skipping parent dir");
+            if( isSkippable(entry->d_name) ) {
                 continue;
             }
 
-            snprintf(pathBuf,sizeof(pathBuf),"%s/%s", dirName, entry->d_name );
+            snprintf(pathBuf,sizeof(pathBuf),"%s/%s", dirPath, entry->d_name );
 
-            if ( stat(pathBuf,&statVar) == -1 ) {
-                perror("stat");
-                exit(3);
+            //insert metadata
+            f = createFile(pathBuf); 
+            f->filename = entry->d_name;
+
+            //print metadata
+            FILE* snapshotFile = createSnapshot(f,dirPath);
+            printFileInfo(f,snapshotFile);
+            fclose(snapshotFile);
+
+            if( S_ISDIR(f->filemode) ) {
+                parseDir( pathBuf );
             }
 
-            pwd = getpwuid(statVar.st_uid);
-            const char* owner = ( pwd != NULL ) ? pwd->pw_name : "UNKNOWN";
-
-            grp = getgrgid(statVar.st_gid);
-            const char* group = (grp!=NULL) ? grp->gr_name : "UNKNOWN";
-
-            File f;
-            f.filename = entry->d_name;
-            f.inode = statVar.st_ino;
-            f.filesize = statVar.st_size;
-            f.filetype = getEntryType(statVar.st_mode);
-            f.hlinks = statVar.st_nlink;
-            f.owner = owner;
-            f.group = group;
-
-            printFileInfo(&f,count++,outputFile);
-
-            if( S_ISDIR(statVar.st_mode) ) {
-                printf("move to inner dir: \n");
-                parseDir( pathBuf, outputFile );
-                printf("return to parent dir:\n");
-            }
+            free(f);
     }
 
      closedir(dir);
 
 }
 
+bool isSkippable(const char* filePath) {
+    return strcmp(filePath,".") == 0 || strcmp(filePath,"..") == 0 || strstr(filePath,"snapshot");
+}
+
 int main(int argc, char** argv) {
 
-    if( argc !=2 ) {
+    if( argc < 2 ) {
         perror("incorrect call\n Usage: ./executable <dirname>");
         exit(1);
     }
-    
-    int outFile = open("output.bin", O_WRONLY | O_CREAT | O_TRUNC, S_IREAD | S_IWRITE);
 
-    if( outFile == -1 ) {
-        perror("opening file");
-        exit(errno);
+    char* parentDirName;
+
+    for(int i = 1; i<argc; i++) {
+
+        parentDirName = argv[i];
+        parseDir(parentDirName);
     }
-
-    const char* parentDirName = argv[1];
-    parseDir(parentDirName,outFile);
-
-    close(outFile);
     return 0;
 }

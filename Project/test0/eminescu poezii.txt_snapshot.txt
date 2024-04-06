@@ -1,0 +1,3 @@
+ENTRY INFO: filename => eminescu poezii.txt
+	 inode => 5348024559015714	 hardlinks => 1	 size => 0
+	TYPE=> - OWNID: sx GRPID: sx
