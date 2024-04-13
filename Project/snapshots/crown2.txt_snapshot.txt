@@ -1,0 +1,6 @@
+ENTRY INFO:
+	 filename => crown2.txt
+	 inode => 5348024557510741
+	 hardlinks => 1
+	 size => 20
+	TYPE=> - OWNID: sx GRPID: sx

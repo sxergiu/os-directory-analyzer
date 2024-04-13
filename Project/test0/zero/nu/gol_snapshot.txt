@@ -1,3 +1,0 @@
-ENTRY INFO: filename => gol
-	 inode => 2533274791909152	 hardlinks => 1	 size => 512
-	TYPE=> d OWNID: sx GRPID: sx

@@ -27,17 +27,24 @@ typedef struct _file{
 
 }File;
 
+//function that creates a file with info extracted from a snapshot
+//function that compares 2 file structures
+//overwriting mechanism
+//add relevant file field + remove user and group id
+//>>>create snapshots within child processes
+
+DIR* createDir(const char* path);  //opens an existing dir or creates it at given path
 bool isSkippable(const char* filePath); //checks if path is crt or parent
 void printFileInfo(File* f,FILE* out); //prints f info to out file
 FILE* createSnapshot(File* f, const char* path); //creates snapshot file for file f in the given path
 char getEntryType(mode_t m); //converts filemode to readable type
 File* createFile( const char* filepath ); // allocates a structure and inserts metadata based on path
-void parseDir(const char* dirPath); //parses each entry of the given path and entries of found subdirectories
-
+void parseDir(const char* dirPath, const char* outDir); //parses each entry of the given path and entries of found subdirectories
+                                                        //outDir stores the snapshots
 void printFileInfo(File* f,FILE* out) {
 
-       fprintf(out,"ENTRY INFO: filename => %s\n\t ",f->filename);
-       fprintf(out,"inode => %lu\t hardlinks => %lu\t size => %lu\n\t",f->inode,f->hlinks,f->filesize);
+       fprintf(out,"ENTRY INFO:\n\t filename => %s\n\t ",f->filename);
+       fprintf(out,"inode => %lu\n\t hardlinks => %lu\n\t size => %lu\n\t",f->inode,f->hlinks,f->filesize);
        fprintf(out,"TYPE=> %c OWNID: %s GRPID: %s\n",f->filetype,f->owner,f->group);
 } 
 
@@ -102,7 +109,7 @@ FILE* createSnapshot(File* f, const char* path) {
     return snapshotFile;    
 }
 
-void parseDir(const char* dirPath) {
+void parseDir(const char* dirPath,const char* outPath) {
 
     DIR* dir;
     struct dirent* entry;
@@ -129,12 +136,13 @@ void parseDir(const char* dirPath) {
             f->filename = entry->d_name;
 
             //print metadata
-            FILE* snapshotFile = createSnapshot(f,dirPath);
+            //printf("%s\n",f->filename);
+            FILE* snapshotFile = createSnapshot(f,outPath);
             printFileInfo(f,snapshotFile);
             fclose(snapshotFile);
 
             if( S_ISDIR(f->filemode) ) {
-                parseDir( pathBuf );
+                parseDir( pathBuf, outPath );
             }
 
             free(f);
@@ -148,23 +156,46 @@ bool isSkippable(const char* filePath) {
     return strcmp(filePath,".") == 0 || strcmp(filePath,"..") == 0 || strstr(filePath,"snapshot");
 }
 
+DIR* createDir(const char* path) {
+
+    DIR* Dir = opendir(path);
+    if( Dir == NULL ) {
+        if( mkdir( path, 0777 ) != 0 ) {
+            perror("failed to create dir!");
+            exit(1);
+        } 
+    }
+    return Dir;
+}
+
+bool argsAreOk(int argc, char** argv ) {
+
+    if( argc < 2 || argc > 13 || strcmp(argv[1],"-o")!=0 ) {
+        perror("incorrect call\n Usage: ./executable -o <output_dir> <dirname1> <dirname2> ... maximum 10 ");
+        return false;
+    }
+    return true;
+}
+
+void run(int argc,char** argv){
+
+         const char* outputDirPath = argv[2];
+         DIR* outputDir = createDir(argv[2]);
+
+        const char* parentDirName;
+        for(int i = 3; i<argc; i++) {
+
+            parentDirName = argv[i];
+            parseDir(parentDirName, outputDirPath);
+        }
+
+        closedir(outputDir);
+}
+
 int main(int argc, char** argv) {
 
-    if( argc < 2 || argc > 13 ) {
-        perror("incorrect call\n Usage: ./executable <dirname1> <dirname2> ... maximum 10 ");
-        exit(1);
-    }
-    if( argv[1] != "-o" ) {
-        perror("please provide output directory for storing snapshots!" );
-    }
-    
-
-    char* parentDirName;
-
-    for(int i = 1; i<argc; i++) {
-
-        parentDirName = argv[i];
-        parseDir(parentDirName);
+    if( argsAreOk(argc,argv) ) {
+            run(argc,argv);
     }
     return 0;
 }
