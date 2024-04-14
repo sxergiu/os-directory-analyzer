@@ -1,6 +1,8 @@
 ENTRY INFO:
-	 filename => test3
-	 inode => 844424931645130
-	 hardlinks => 1
-	 size => 512
-	TYPE=> d OWNID: sx GRPID: sx
+
+Filename=>test3
+Inode=>844424931645130
+Hardlinks=>1
+Size(bytes)=>512
+Last modified=>21:20:31
+Permissions=>drwxrwxrwx

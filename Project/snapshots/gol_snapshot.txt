@@ -1,6 +1,8 @@
 ENTRY INFO:
-	 filename => gol
-	 inode => 2533274791909152
-	 hardlinks => 1
-	 size => 512
-	TYPE=> d OWNID: sx GRPID: sx
+
+Filename=>gol
+Inode=>2533274791909152
+Hardlinks=>1
+Size(bytes)=>512
+Last modified=>21:44:16
+Permissions=>drwxrwxrwx

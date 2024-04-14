@@ -1,6 +1,8 @@
 ENTRY INFO:
-	 filename => void1.txt
-	 inode => 844424931645150
-	 hardlinks => 1
-	 size => 4
-	TYPE=> - OWNID: sx GRPID: sx
+
+Filename=>void1.txt
+Inode=>844424931645150
+Hardlinks=>1
+Size(bytes)=>4
+Last modified=>18:35:45
+Permissions=>-rwxrwxrwx

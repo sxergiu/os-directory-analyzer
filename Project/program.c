@@ -2,6 +2,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
 #include <string.h>
 #include <stdbool.h>
 #include <pwd.h>
@@ -11,26 +12,24 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+#define PERM_LEN 11
+#define TIME_LEN 9
+#define BUFF_LEN 512
+
 typedef struct _file{
 
     const char* filename;
     long unsigned inode;
     long unsigned filesize;
     long unsigned hlinks;
-    char filetype;
-    const char* owner;
-    const char* group;
-    //time?
-    //acces rights
+    char modifTime[TIME_LEN];
+    char perms[PERM_LEN];
 
     mode_t filemode;
+    time_t last_modified;
 
 }File;
 
-//function that creates a file with info extracted from a snapshot
-//function that compares 2 file structures
-//overwriting mechanism
-//add relevant file field + remove user and group id
 //>>>create snapshots within child processes
 
 DIR* createDir(const char* path);  //opens an existing dir or creates it at given path
@@ -43,9 +42,12 @@ void parseDir(const char* dirPath, const char* outDir); //parses each entry of t
                                                         //outDir stores the snapshots
 void printFileInfo(File* f,FILE* out) {
 
-       fprintf(out,"ENTRY INFO:\n\t filename => %s\n\t ",f->filename);
-       fprintf(out,"inode => %lu\n\t hardlinks => %lu\n\t size => %lu\n\t",f->inode,f->hlinks,f->filesize);
-       fprintf(out,"TYPE=> %c OWNID: %s GRPID: %s\n",f->filetype,f->owner,f->group);
+       fprintf(out,"ENTRY INFO:\n\nFilename=>%s\n",f->filename);
+       fprintf(out,"Inode=>%lu\nHardlinks=>%lu\nSize(bytes)=>%lu\n",f->inode,f->hlinks,f->filesize);
+       fprintf(out,"Last modified=>%s\n", f->modifTime);
+       fprintf(out,"Permissions=>%s\n", f->perms);
+
+       fclose(out);
 } 
 
 char getEntryType(mode_t m) {
@@ -58,6 +60,29 @@ char getEntryType(mode_t m) {
     else if ( S_ISSOCK(m) ) return 's';
     else if ( S_ISLNK(m) ) return 'l';
     else return '?';
+}
+
+void getEntryPerms(File* f, mode_t m) {
+
+    snprintf(f->perms, sizeof(f->perms), "%c%c%c%c%c%c%c%c%c%c",
+             (getEntryType(m)),
+             (m & S_IRUSR) ? 'r' : '-',
+             (m & S_IWUSR) ? 'w' : '-',
+             (m & S_IXUSR) ? 'x' : '-',
+             (m & S_IRGRP) ? 'r' : '-',
+             (m & S_IWGRP) ? 'w' : '-',
+             (m & S_IXGRP) ? 'x' : '-',
+             (m & S_IROTH) ? 'r' : '-',
+             (m & S_IWOTH) ? 'w' : '-',
+             (m & S_IXOTH) ? 'x' : '-');
+}
+
+void getEntryTime(File* f, time_t t) {
+
+    struct tm* tm_info = localtime(&t);
+    char time_str[TIME_LEN];
+    strftime(time_str, sizeof(time_str), "%H:%M:%S", tm_info);
+    strncpy(f->modifTime,time_str,TIME_LEN);
 }
 
 File* createFile( const char* filepath ) {
@@ -74,29 +99,22 @@ File* createFile( const char* filepath ) {
         perror("Allocation");
     }
 
-    struct group *grp;
-    struct passwd *pwd;
-
-    pwd = getpwuid(statVar.st_uid);
-    const char* owner = ( pwd != NULL ) ? pwd->pw_name : "UNKNOWN";
-
-    grp = getgrgid(statVar.st_gid);
-    const char* group = (grp!=NULL) ? grp->gr_name : "UNKNOWN";
-
      f->inode = statVar.st_ino;
      f->filesize = statVar.st_size;
-     f->filetype = getEntryType(statVar.st_mode);
      f->hlinks = statVar.st_nlink;
-     f->owner = owner;
-     f->group = group;
+
      f->filemode = statVar.st_mode;
+     getEntryPerms(f,f->filemode);
+
+     f->last_modified = statVar.st_mtime;
+     getEntryTime(f,f->last_modified);
 
      return f;
 }
 
 FILE* createSnapshot(File* f, const char* path) {
 
-    char snapshotPath[512];
+    char snapshotPath[BUFF_LEN];
 
     snprintf(snapshotPath, sizeof(snapshotPath), "%s/%s_snapshot.txt", path, f->filename);
 
@@ -108,6 +126,103 @@ FILE* createSnapshot(File* f, const char* path) {
 
     return snapshotFile;    
 }
+
+
+File* extractSnapshotInfo(const char* snapshotPath) {
+
+    FILE* snapshotFile = fopen(snapshotPath, "r");
+    if (snapshotFile == NULL) {
+        return NULL;
+    }
+
+    File* f = malloc(sizeof(File));
+    if (f == NULL) {
+        perror("Memory allocation error");
+        exit(1);
+    }
+
+    f->filename = NULL;
+    f->inode = 0;
+    f->filesize = 0;
+    f->hlinks = 0;
+    f->last_modified = 0;
+    f->filemode = 0;
+
+    char buffer[BUFF_LEN];
+    // Read and extract fields from the snapshot file
+    while (!feof(snapshotFile)) {
+        if (fgets(buffer, sizeof(buffer), snapshotFile) == NULL) {
+            break;
+        }
+
+        char* token = strtok(buffer, "=>\n>");
+        if (token != NULL) {
+            if (strcmp(token, "Filename") == 0) {
+                token = strtok(NULL, "=>\n>");
+                f->filename = strdup(token);
+            } else if (strcmp(token, "Inode") == 0) {
+                token = strtok(NULL, "=>\n>");
+                f->inode = strtoul(token, NULL, 10);
+            } else if (strcmp(token, "Hardlinks") == 0) {
+                token = strtok(NULL, "=>\n>");
+                f->hlinks = strtoul(token, NULL, 10);
+            } else if (strcmp(token, "Size(bytes)") == 0) {
+                token = strtok(NULL, "=>\n>");
+                f->filesize = strtoul(token, NULL, 10);
+            } else if (strcmp(token, "Last modified") == 0) {
+                token = strtok(NULL, "=>\n>");
+                strncpy(f->modifTime, token, TIME_LEN);
+            } else if (strcmp(token, "Permissions") == 0) {
+                token = strtok(NULL, "=>\n>");
+                strncpy(f->perms, token, PERM_LEN);
+            }
+        }
+    }
+
+    f->modifTime[TIME_LEN-1] = '\0';
+    f->perms[PERM_LEN - 1] = '\0';
+
+    fclose(snapshotFile);
+    return f;
+}
+
+
+File* findExistingSnapshot(const char* outPath, const char* filename){
+    
+    char buf[BUFF_LEN];
+    snprintf(buf, BUFF_LEN, "%s/%s_snapshot.txt", outPath, filename);
+    //printf("%s\n", buf);
+    File* f = extractSnapshotInfo(buf);
+
+    if( f == NULL ) {
+        perror("Snapshot file doesn't exist");
+        return NULL;
+    }
+
+    // Print entry info
+    /*
+    printf("ENTRY INFO:\n\n");
+    printf("Filename=> %s\n", f->filename);
+    printf("Inode=> %lu\n", f->inode);
+    printf("Hardlinks=> %lu\n", f->hlinks);
+    printf("Size(bytes)=> %lu\n", f->filesize); 
+    printf("Last modified=> %s\n", f->modifTime);
+    printf("Permissions=> %s\n", f->perms);
+    */
+   return f;
+}
+
+bool sameFiles(File* f1, File* f2) {
+
+    if ( strcmp( f1->filename, f2->filename ) ) return false;
+    if( f1->filesize != f2->filesize ) return false;
+    if( f1->inode != f2->inode ) return false;
+    if( f1->hlinks != f2->hlinks ) return false;
+    if( strcmp(f1->modifTime,f2->modifTime) ) return false;
+    if( strcmp(f1->perms,f2->perms) ) return false;
+    return true;
+}
+
 
 void parseDir(const char* dirPath,const char* outPath) {
 
@@ -121,7 +236,7 @@ void parseDir(const char* dirPath,const char* outPath) {
         exit(2);
     }
 
-    char pathBuf[512];
+    char pathBuf[BUFF_LEN];
 
     while( (entry = readdir(dir)) != NULL ) {
 
@@ -135,11 +250,18 @@ void parseDir(const char* dirPath,const char* outPath) {
             f = createFile(pathBuf); 
             f->filename = entry->d_name;
 
-            //print metadata
-            //printf("%s\n",f->filename);
-            FILE* snapshotFile = createSnapshot(f,outPath);
-            printFileInfo(f,snapshotFile);
-            fclose(snapshotFile);
+            File* existingSnapshot = findExistingSnapshot(outPath,f->filename);
+
+            if( existingSnapshot != NULL) {
+
+                    if( !sameFiles(existingSnapshot,f) ) {
+
+                        printf("file with name %s was modified\n", f->filename);
+                        FILE* newSnapshot = createSnapshot(f,outPath);
+                        printFileInfo(f,newSnapshot);
+                    }
+                    free(existingSnapshot);
+            }
 
             if( S_ISDIR(f->filemode) ) {
                 parseDir( pathBuf, outPath );
@@ -147,13 +269,11 @@ void parseDir(const char* dirPath,const char* outPath) {
 
             free(f);
     }
-
      closedir(dir);
-
 }
 
 bool isSkippable(const char* filePath) {
-    return strcmp(filePath,".") == 0 || strcmp(filePath,"..") == 0 || strstr(filePath,"snapshot");
+    return strcmp(filePath,".") == 0 || strcmp(filePath,"..") == 0;
 }
 
 DIR* createDir(const char* path) {
@@ -170,7 +290,7 @@ DIR* createDir(const char* path) {
 
 bool argsAreOk(int argc, char** argv ) {
 
-    if( argc < 2 || argc > 13 || strcmp(argv[1],"-o")!=0 ) {
+    if( argc < 4 || argc > 13 || strcmp(argv[1],"-o")!=0 ) {
         perror("incorrect call\n Usage: ./executable -o <output_dir> <dirname1> <dirname2> ... maximum 10 ");
         return false;
     }
