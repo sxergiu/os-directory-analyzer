@@ -4,5 +4,5 @@ Filename=>test2
 Inode=>1125899908355794
 Hardlinks=>1
 Size(bytes)=>512
-Last modified=>21:20:21
+Last modified=>17:01:06
 Permissions=>drwxrwxrwx

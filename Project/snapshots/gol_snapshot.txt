@@ -1,8 +1,8 @@
 ENTRY INFO:
 
 Filename=>gol
-Inode=>2533274791909152
+Inode=>562949954925752
 Hardlinks=>1
 Size(bytes)=>512
-Last modified=>21:44:16
+Last modified=>17:01:06
 Permissions=>drwxrwxrwx

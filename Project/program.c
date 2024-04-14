@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
@@ -30,16 +31,27 @@ typedef struct _file{
 
 }File;
 
-//>>>create snapshots within child processes
-
-DIR* createDir(const char* path);  //opens an existing dir or creates it at given path
-bool isSkippable(const char* filePath); //checks if path is crt or parent
 void printFileInfo(File* f,FILE* out); //prints f info to out file
-FILE* createSnapshot(File* f, const char* path); //creates snapshot file for file f in the given path
-char getEntryType(mode_t m); //converts filemode to readable type
+
+char getEntryType(mode_t m); //returns char for a certain filemode
+void getEntryPerms(File* f, mode_t m); //fills access rights field for file f
+void getEntryTime(File* f, time_t t); //fills last modified time field for file f
+
 File* createFile( const char* filepath ); // allocates a structure and inserts metadata based on path
+
+FILE* createSnapshot(File* f, const char* path); //creates snapshot file for file f in the given path
+File* extractSnapshotInfo(const char* snapshotPath); //allocates a structure and inserts metadata based on existing snapshot                                                  //already existing snapshot
+File* findExistingSnapshot(const char* outPath, const char* filename); //looks in the output dir for the snapshot of
+                                                                        //the given file and returns it
+
+bool sameFiles(File* f1, File* f2); //true if equal metadata
 void parseDir(const char* dirPath, const char* outDir); //parses each entry of the given path and entries of found subdirectories
                                                         //outDir stores the snapshots
+bool isSkippable(const char* filePath); //true if path is crt, parent or a snapshot
+DIR* createDir(const char* path);  //opens an existing dir or creates it at given path
+bool argsAreOk(int argc, char** argv ); //true if args are ok
+
+
 void printFileInfo(File* f,FILE* out) {
 
        fprintf(out,"ENTRY INFO:\n\nFilename=>%s\n",f->filename);
@@ -97,6 +109,7 @@ File* createFile( const char* filepath ) {
     File* f = malloc(sizeof(File));
     if( f == NULL ) {
         perror("Allocation");
+        exit(1);
     }
 
      f->inode = statVar.st_ino;
@@ -137,7 +150,7 @@ File* extractSnapshotInfo(const char* snapshotPath) {
 
     File* f = malloc(sizeof(File));
     if (f == NULL) {
-        perror("Memory allocation error");
+        perror("Allocation");
         exit(1);
     }
 
@@ -149,7 +162,6 @@ File* extractSnapshotInfo(const char* snapshotPath) {
     f->filemode = 0;
 
     char buffer[BUFF_LEN];
-    // Read and extract fields from the snapshot file
     while (!feof(snapshotFile)) {
         if (fgets(buffer, sizeof(buffer), snapshotFile) == NULL) {
             break;
@@ -191,25 +203,7 @@ File* findExistingSnapshot(const char* outPath, const char* filename){
     
     char buf[BUFF_LEN];
     snprintf(buf, BUFF_LEN, "%s/%s_snapshot.txt", outPath, filename);
-    //printf("%s\n", buf);
-    File* f = extractSnapshotInfo(buf);
-
-    if( f == NULL ) {
-        perror("Snapshot file doesn't exist");
-        return NULL;
-    }
-
-    // Print entry info
-    /*
-    printf("ENTRY INFO:\n\n");
-    printf("Filename=> %s\n", f->filename);
-    printf("Inode=> %lu\n", f->inode);
-    printf("Hardlinks=> %lu\n", f->hlinks);
-    printf("Size(bytes)=> %lu\n", f->filesize); 
-    printf("Last modified=> %s\n", f->modifTime);
-    printf("Permissions=> %s\n", f->perms);
-    */
-   return f;
+    return extractSnapshotInfo(buf); 
 }
 
 bool sameFiles(File* f1, File* f2) {
@@ -252,16 +246,19 @@ void parseDir(const char* dirPath,const char* outPath) {
 
             File* existingSnapshot = findExistingSnapshot(outPath,f->filename);
 
-            if( existingSnapshot != NULL) {
+            if( existingSnapshot != NULL) {  //snapshot exists
 
-                    if( !sameFiles(existingSnapshot,f) ) {
+                    if( !sameFiles(existingSnapshot,f) ) { //file was modified
 
-                        printf("file with name %s was modified\n", f->filename);
-                        FILE* newSnapshot = createSnapshot(f,outPath);
-                        printFileInfo(f,newSnapshot);
-                    }
+                        printf("~~~file with name %s was modified~~~\n", f->filename);
+                    }   //no changes
                     free(existingSnapshot);
+            }else { //no snapshot means file is new
+                        printf("+++file with name %s was just added+++\n", f->filename );
             }
+
+            FILE* newSnapshot = createSnapshot(f,outPath);
+            printFileInfo(f,newSnapshot);
 
             if( S_ISDIR(f->filemode) ) {
                 parseDir( pathBuf, outPath );
@@ -282,7 +279,7 @@ DIR* createDir(const char* path) {
     if( Dir == NULL ) {
         if( mkdir( path, 0777 ) != 0 ) {
             perror("failed to create dir!");
-            exit(1);
+            exit(-7);
         } 
     }
     return Dir;
@@ -297,25 +294,46 @@ bool argsAreOk(int argc, char** argv ) {
     return true;
 }
 
-void run(int argc,char** argv){
+void runParentProcess(int argc,char** argv){
 
-         const char* outputDirPath = argv[2];
-         DIR* outputDir = createDir(argv[2]);
+        const char* outputDirPath = argv[2];
+        DIR* outputDir = createDir(argv[2]);
 
         const char* parentDirName;
         for(int i = 3; i<argc; i++) {
+            
+            pid_t pid = fork();
+            if( pid == -1 ) {
+                perror("fork");
+                exit(-1);
+            } else if ( pid == 0 ) {
 
-            parentDirName = argv[i];
-            parseDir(parentDirName, outputDirPath);
+                parentDirName = argv[i];
+                parseDir(parentDirName, outputDirPath);
+                printf("Snapshot for directory <%s> created.\n",parentDirName);
+                exit(0);
+            }
         }
 
+        for(int i=3; i<argc; i++) {
+
+            int status;
+            pid_t child_pid = wait(&status);
+
+            if( WIFEXITED(status) ){
+                printf("\tChild process #%d with PID %d terminated and exit code %d.\n\n",i-2, child_pid, WEXITSTATUS(status) );
+            }
+            else {
+                printf("\tChild process #%d with PID %d FAILURE.\n\n",i-2, child_pid);
+            }
+        }
         closedir(outputDir);
 }
 
 int main(int argc, char** argv) {
 
     if( argsAreOk(argc,argv) ) {
-            run(argc,argv);
+            runParentProcess(argc,argv);
     }
     return 0;
 }

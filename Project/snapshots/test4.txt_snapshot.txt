@@ -1,0 +1,8 @@
+ENTRY INFO:
+
+Filename=>test4.txt
+Inode=>5348024557529516
+Hardlinks=>1
+Size(bytes)=>0
+Last modified=>19:34:11
+Permissions=>-rwxrwxrwx

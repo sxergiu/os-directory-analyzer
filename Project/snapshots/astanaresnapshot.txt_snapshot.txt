@@ -1,8 +1,8 @@
 ENTRY INFO:
 
 Filename=>astanaresnapshot.txt
-Inode=>21673573206753850
+Inode=>1688849861619071
 Hardlinks=>1
 Size(bytes)=>0
-Last modified=>16:43:35
+Last modified=>17:01:06
 Permissions=>-rwxrwxrwx

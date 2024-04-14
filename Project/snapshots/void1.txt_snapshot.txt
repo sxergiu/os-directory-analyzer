@@ -3,6 +3,6 @@ ENTRY INFO:
 Filename=>void1.txt
 Inode=>844424931645150
 Hardlinks=>1
-Size(bytes)=>4
-Last modified=>18:35:45
-Permissions=>-rwxrwxrwx
+Size(bytes)=>43
+Last modified=>19:28:46
+Permissions=>-r-xr-xr-x
