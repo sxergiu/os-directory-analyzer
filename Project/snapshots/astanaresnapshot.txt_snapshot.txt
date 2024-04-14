@@ -1,0 +1,8 @@
+ENTRY INFO:
+
+Filename=>astanaresnapshot.txt
+Inode=>21673573206753850
+Hardlinks=>1
+Size(bytes)=>0
+Last modified=>16:43:35
+Permissions=>-rwxrwxrwx

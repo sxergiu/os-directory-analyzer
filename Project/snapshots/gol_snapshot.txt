@@ -1,0 +1,8 @@
+ENTRY INFO:
+
+Filename=>gol
+Inode=>2533274791909152
+Hardlinks=>1
+Size(bytes)=>512
+Last modified=>21:44:16
+Permissions=>drwxrwxrwx

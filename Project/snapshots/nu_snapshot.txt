@@ -1,0 +1,8 @@
+ENTRY INFO:
+
+Filename=>nu
+Inode=>5910974511823433
+Hardlinks=>1
+Size(bytes)=>512
+Last modified=>21:20:05
+Permissions=>drwxrwxrwx

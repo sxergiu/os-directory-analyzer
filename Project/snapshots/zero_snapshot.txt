@@ -1,0 +1,8 @@
+ENTRY INFO:
+
+Filename=>zero
+Inode=>281474978224317
+Hardlinks=>1
+Size(bytes)=>512
+Last modified=>21:20:00
+Permissions=>drwxrwxrwx

@@ -1,3 +1,0 @@
-ENTRY INFO: filename => evil1.txt
-	 inode => 3377699722041049	 hardlinks => 1	 size => 23
-	TYPE=> - OWNID: sx GRPID: sx

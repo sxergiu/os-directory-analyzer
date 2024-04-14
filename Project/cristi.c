@@ -150,10 +150,14 @@ bool isSkippable(const char* filePath) {
 
 int main(int argc, char** argv) {
 
-    if( argc < 2 ) {
-        perror("incorrect call\n Usage: ./executable <dirname>");
+    if( argc < 2 || argc > 13 ) {
+        perror("incorrect call\n Usage: ./executable <dirname1> <dirname2> ... maximum 10 ");
         exit(1);
     }
+    if( argv[1] != "-o" ) {
+        perror("please provide output directory for storing snapshots!" );
+    }
+    
 
     char* parentDirName;
 

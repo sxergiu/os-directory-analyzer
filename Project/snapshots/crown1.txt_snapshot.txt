@@ -1,0 +1,8 @@
+ENTRY INFO:
+
+Filename=>crown1.txt
+Inode=>562949954934497
+Hardlinks=>1
+Size(bytes)=>20
+Last modified=>18:34:53
+Permissions=>-rwxrwxrwx
