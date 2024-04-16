@@ -131,7 +131,7 @@ FILE* createSnapshot(File* f, const char* path) {
 
     snprintf(snapshotPath, sizeof(snapshotPath), "%s/%s_snapshot.txt", path, f->filename);
 
-    FILE* snapshotFile = fopen(snapshotPath, "w");
+    FILE* snapshotFile = fopen(snapshotPath, "w"); ///replace with open
     if (snapshotFile == NULL) {
         perror("Unable to create snapshot file");
         exit(6);
@@ -143,7 +143,7 @@ FILE* createSnapshot(File* f, const char* path) {
 
 File* extractSnapshotInfo(const char* snapshotPath) {
 
-    FILE* snapshotFile = fopen(snapshotPath, "r");
+    FILE* snapshotFile = fopen(snapshotPath, "r"); ///replace with open
     if (snapshotFile == NULL) {
         return NULL;
     }
@@ -288,7 +288,6 @@ DIR* createDir(const char* path) {
 bool argsAreOk(int argc, char** argv ) {
 
     if( argc < 4 || argc > 13 || strcmp(argv[1],"-o")!=0 ) {
-        perror("incorrect call\n Usage: ./executable -o <output_dir> <dirname1> <dirname2> ... maximum 10 ");
         return false;
     }
     return true;
@@ -334,6 +333,9 @@ int main(int argc, char** argv) {
 
     if( argsAreOk(argc,argv) ) {
             runParentProcess(argc,argv);
+    }
+    else {
+         perror("incorrect call\n Usage: ./executable -o <output_dir> <dirname1> <dirname2> ... maximum 10 ");
     }
     return 0;
 }

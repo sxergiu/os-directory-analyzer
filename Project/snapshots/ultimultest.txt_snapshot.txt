@@ -1,8 +1,8 @@
 ENTRY INFO:
 
 Filename=>ultimultest.txt
-Inode=>11258999068463593
+Inode=>27133578
 Hardlinks=>1
 Size(bytes)=>0
-Last modified=>21:00:16
-Permissions=>-rwxrwxrwx
+Last modified=>18:09:20
+Permissions=>-rw-r--r--

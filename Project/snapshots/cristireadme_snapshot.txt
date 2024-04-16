@@ -1,8 +1,8 @@
 ENTRY INFO:
 
-Filename=>test4.txt
-Inode=>27133577
+Filename=>cristireadme
+Inode=>27132700
 Hardlinks=>1
 Size(bytes)=>0
-Last modified=>18:09:20
+Last modified=>18:31:45
 Permissions=>-rw-r--r--

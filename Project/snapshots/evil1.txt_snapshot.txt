@@ -1,8 +1,8 @@
 ENTRY INFO:
 
 Filename=>evil1.txt
-Inode=>9570149208179967
+Inode=>27133569
 Hardlinks=>1
 Size(bytes)=>18
-Last modified=>17:01:06
-Permissions=>-rwxrwxrwx
+Last modified=>18:09:20
+Permissions=>-rw-r--r--

@@ -1,8 +1,8 @@
 ENTRY INFO:
 
 Filename=>void3.txt
-Inode=>4222124650686141
+Inode=>27133576
 Hardlinks=>1
 Size(bytes)=>10
-Last modified=>18:35:39
-Permissions=>-rwxrwxrwx
+Last modified=>18:09:20
+Permissions=>-rw-r--r--
