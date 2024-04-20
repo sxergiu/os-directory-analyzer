@@ -1,6 +1,6 @@
 Filename=>test4.txt
-Inode=>5348024557529516
+Inode=>27133577
 Hardlinks=>1
 Size(bytes)=>0
-Last modified=>19:34:11
-Permissions=>-rwxrwxrwx
+Last modified=>18:09:20
+Permissions=>-rw-r--r--

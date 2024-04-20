@@ -1,6 +1,6 @@
 Filename=>programulvechi.c
 Inode=>250231254295787553
 Hardlinks=>1
-Size(bytes)=>4418
-Last modified=>17:01:06
-Permissions=>-rwxrwxrwx
+Size(bytes)=>4248
+Last modified=>18:09:20
+Permissions=>-rw-r--r--

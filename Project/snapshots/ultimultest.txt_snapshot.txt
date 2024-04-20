@@ -1,5 +1,5 @@
 Filename=>ultimultest.txt
-Inode=>11258999068463593
+Inode=>27133578
 Hardlinks=>1
 Size(bytes)=>49
 Last modified=>19:48:28

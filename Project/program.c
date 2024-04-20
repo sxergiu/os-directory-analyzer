@@ -411,5 +411,8 @@ int main(int argc, char** argv) {
     if( argsAreOk(argc,argv) ) {
             runParentProcess(argc,argv);
     }
+    else {
+         perror("incorrect call\n Usage: ./executable -o <output_dir> <dirname1> <dirname2> ... maximum 10 ");
+    }
     return 0;
 }
