@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>astanaresnapshot.txt
 Inode=>1688849861619071
 Hardlinks=>1

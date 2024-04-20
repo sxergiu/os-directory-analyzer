@@ -1,0 +1,6 @@
+Filename=>dececrapa.txt
+Inode=>27021597764250181
+Hardlinks=>1
+Size(bytes)=>40
+Last modified=>19:47:55
+Permissions=>-rwxrwxrwx

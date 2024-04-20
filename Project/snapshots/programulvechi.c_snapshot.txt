@@ -1,6 +1,4 @@
-ENTRY INFO:
-
-Filename=>cristi.c
+Filename=>programulvechi.c
 Inode=>250231254295787553
 Hardlinks=>1
 Size(bytes)=>4418

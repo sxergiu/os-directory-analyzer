@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>gol
 Inode=>562949954925752
 Hardlinks=>1

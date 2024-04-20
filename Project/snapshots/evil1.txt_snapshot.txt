@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>evil1.txt
 Inode=>9570149208179967
 Hardlinks=>1

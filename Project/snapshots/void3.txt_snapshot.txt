@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>void3.txt
 Inode=>4222124650686141
 Hardlinks=>1

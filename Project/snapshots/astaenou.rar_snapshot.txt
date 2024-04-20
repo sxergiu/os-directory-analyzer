@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>astaenou.rar
 Inode=>14355223812281963
 Hardlinks=>1

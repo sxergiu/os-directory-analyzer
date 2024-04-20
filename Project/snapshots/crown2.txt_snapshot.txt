@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>crown2.txt
 Inode=>5910974510932053
 Hardlinks=>1

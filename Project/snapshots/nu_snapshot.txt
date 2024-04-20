@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>nu
 Inode=>1125899908347062
 Hardlinks=>1

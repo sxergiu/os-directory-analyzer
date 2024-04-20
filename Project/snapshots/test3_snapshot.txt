@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>test3
 Inode=>844424931645130
 Hardlinks=>1

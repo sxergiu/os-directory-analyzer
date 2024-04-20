@@ -1,0 +1,6 @@
+Filename=>DECECRAPACODU.txt
+Inode=>4222124651396190
+Hardlinks=>1
+Size(bytes)=>12
+Last modified=>19:53:41
+Permissions=>-rwxrwxrwx

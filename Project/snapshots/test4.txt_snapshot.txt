@@ -1,5 +1,3 @@
-ENTRY INFO:
-
 Filename=>test4.txt
 Inode=>5348024557529516
 Hardlinks=>1
