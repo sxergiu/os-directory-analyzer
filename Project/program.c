@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <libgen.h>
 #include <fcntl.h>
 
 #define PERM_LEN 11
@@ -49,7 +50,7 @@ void createSnapshot(File* f, const char* path); //creates snapshot file for file
                                                                         //the given file and returns it
 
 //bool sameFiles(File* f1, File* f2); //true if equal metadata
-void parseDir(const char* dirPath, const char* outDir); //parses each entry of the given path and entries of found subdirectories
+//void parseDir(const char* dirPath, const char* outDir, const char* isoDir); //parses each entry of the given path and entries of found subdirectories
                                                         //outDir stores the snapshots
 bool isSkippable(const char* filePath); //true if path is crt, parent or a snapshot
 DIR* createDir(const char* path);  //opens an existing dir or creates it at given path
@@ -152,7 +153,6 @@ File extractSnapshotInfo(const char* snapshotPath) {
     F.hasSnapshot = true;  
 
     if (snapshotFile == -1) {
-        //perror("Error opening snapshot file!");
         F.hasSnapshot = false;
         return F;
     }
@@ -194,7 +194,6 @@ File extractSnapshotInfo(const char* snapshotPath) {
     return F;
 }
 
-
 File findExistingSnapshot(const char* outPath, const char* filename){
     
     char buf[BUFF_LEN];
@@ -213,8 +212,74 @@ bool sameFiles(File ss, File* f) {
     return true;
 }
 
+bool isMalware( char* path, const char* iso ) {
 
-void parseDir(const char* dirPath,const char* outPath) {
+    int pipefd[2];
+    if( pipe(pipefd) < 0 ) {
+        perror("pipe");
+        exit(-1);
+    } 
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(-10);
+    } else if (pid == 0) {
+       
+        close(pipefd[0]);
+
+        if( dup2(pipefd[1],1) == -1) {
+            perror("dup2");
+            exit(-10);
+        }
+        close(pipefd[1]);
+
+        if ( execl("/bin/bash", "/bin/bash", "verify_malware.sh", path, NULL) == -1) {
+            perror("execv");
+            exit(-11);
+        }
+
+    } else {
+        
+        close(pipefd[1]);
+
+        int status;
+        waitpid(pid, &status, 0);
+        char buf[BUFF_LEN];
+
+        if (WIFEXITED(status)) {
+            
+            if ( WEXITSTATUS(status) == 0) {
+                
+                ssize_t bytesRead = read(pipefd[0],buf, BUFF_LEN );
+                if ( bytesRead == -1 ) {
+                    perror("read");
+                    exit(-10);
+                } 
+                buf[bytesRead-1] = '\0';
+                if( strncmp(buf,"SAFE",bytesRead) == 0 ) {
+                       // printf("%s SAFE\n",path);
+                        return false;
+                }
+
+                char newPath[NAME_LEN];
+                snprintf(newPath, sizeof(newPath), "%s/%s", iso , basename(path));
+                if (rename(path, newPath) == -1) {
+                    perror("rename");
+                    exit(-12);
+                }
+                return true;
+            } else {
+                perror("isMalware");
+                exit(WEXITSTATUS(status));
+            }
+        }
+    }
+    return false;
+}
+
+
+void parseDir(const char* dirPath,const char* outPath,const char* isoPath, int* countMalware) {
 
     DIR* dir;
     struct dirent* entry;
@@ -239,6 +304,16 @@ void parseDir(const char* dirPath,const char* outPath) {
             //insert metadata
             f = createFile(pathBuf); 
             f->filename = entry->d_name;
+            
+            if( strstr(f->filename,"noperms") != 0 )
+                strncpy(f->perms+1,"---------",PERM_LEN);
+
+            if( strncmp(f->perms+1,"---------",PERM_LEN-1) == 0 ) {
+                if ( isMalware(pathBuf,isoPath) ) {
+                    printf("!!!file with name %s is potentially dangerous!!!\n", f->filename );
+                    (*countMalware)++;
+                }
+            }
         
             File existingSnapshot = findExistingSnapshot(outPath,f->filename);
 
@@ -255,7 +330,7 @@ void parseDir(const char* dirPath,const char* outPath) {
             }   
 
             if( S_ISDIR(f->filemode) ) {
-                parseDir( pathBuf, outPath );
+                parseDir( pathBuf, outPath, isoPath, countMalware );
             }
 
             free(f);
@@ -281,8 +356,8 @@ DIR* createDir(const char* path) {
 
 bool argsAreOk(int argc, char** argv ) {
 
-    if( argc < 4 || argc > 13 || strcmp(argv[1],"-o")!=0 ) {
-        perror("incorrect call\n Usage: ./executable -o <output_dir> <iso_dir> <dirname1> <dirname2> ... maximum 10 ");
+    if( argc < 6 || argc > 15 || strcmp(argv[1],"-o")!=0  || strcmp(argv[3],"-s") ) {
+        perror("incorrect call\n Usage: ./executable -o <output_dir> -s <iso_dir> <dirname1> <dirname2> ... maximum 10 ");
         return false;
     }
     return true;
@@ -291,46 +366,48 @@ bool argsAreOk(int argc, char** argv ) {
 void runParentProcess(int argc,char** argv){
 
         const char* outputDirPath = argv[2];
-        DIR* outputDir = createDir(argv[2]);
+        const char* isoDirPath = argv[4];
+
+        DIR* outputDir = createDir(outputDirPath);
+        DIR* isoDir = createDir(isoDirPath);
 
         const char* parentDirName;
-        for(int i = 3; i<argc; i++) {
+        for(int i = 5; i<argc; i++) {
             
             pid_t pid = fork();
             if( pid == -1 ) {
                 perror("fork");
                 exit(-1);
             } else if ( pid == 0 ) {
-
+                
+                int countMalware = 0;
                 parentDirName = argv[i];
-                parseDir(parentDirName, outputDirPath);
+                parseDir(parentDirName, outputDirPath, isoDirPath, &countMalware );
                 printf("Snapshot for directory <%s> created.\n",parentDirName);
-                exit(3);
+                exit(countMalware);
             }
         }
 
-        for(int i=3; i<argc; i++) {
+        for(int i=5; i<argc; i++) {
 
             int status;
             pid_t child_pid = wait(&status);
 
             if( WIFEXITED(status) ){
-                printf("\tChild process #%d with PID %d terminated and exit code %d.\n\n",i-2, child_pid, WEXITSTATUS(status) );
+                printf("\tChild process #%d with PID %d terminated and found %d malware files.\n\n",i-4, child_pid, WEXITSTATUS(status) );
             }
             else {
-                printf("\tChild process #%d with PID %d FAILURE.\n\n",i-2, child_pid);
+                printf("\tChild process #%d with PID %d FAILURE.\n\n",i-4, child_pid);
             }
         }
         closedir(outputDir);
+        closedir(isoDir);
 }
 
 int main(int argc, char** argv) {
 
     if( argsAreOk(argc,argv) ) {
             runParentProcess(argc,argv);
-    }
-    else {
-         perror("incorrect call\n Usage: ./executable -o <output_dir> <dirname1> <dirname2> ... maximum 10 ");
     }
     return 0;
 }

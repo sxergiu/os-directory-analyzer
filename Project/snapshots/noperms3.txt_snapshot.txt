@@ -1,0 +1,6 @@
+Filename=>noperms3.txt
+Inode=>281474978246728
+Hardlinks=>1
+Size(bytes)=>60
+Last modified=>13:14:45
+Permissions=>----------

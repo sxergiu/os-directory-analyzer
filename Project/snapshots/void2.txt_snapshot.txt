@@ -1,6 +1,0 @@
-Filename=>void2.txt
-Inode=>7881299347928655
-Hardlinks=>1
-Size(bytes)=>18
-Last modified=>10:30:36
-Permissions=>-rwxrwxrwx

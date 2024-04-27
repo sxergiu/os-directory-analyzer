@@ -1,6 +1,0 @@
-Filename=>void1.txt
-Inode=>1125899908350497
-Hardlinks=>1
-Size(bytes)=>43
-Last modified=>19:58:18
-Permissions=>-rwxrwxrwx

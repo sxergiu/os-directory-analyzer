@@ -1,6 +1,0 @@
-Filename=>tonietare
-Inode=>1970324837405970
-Hardlinks=>1
-Size(bytes)=>0
-Last modified=>10:30:36
-Permissions=>-rwxrwxrwx
