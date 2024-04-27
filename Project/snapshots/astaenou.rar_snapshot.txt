@@ -1,6 +1,6 @@
 Filename=>astaenou.rar
-Inode=>27133583
+Inode=>844424931639870
 Hardlinks=>1
 Size(bytes)=>24
-Last modified=>18:09:20
-Permissions=>-rw-r--r--
+Last modified=>19:58:18
+Permissions=>-rwxrwxrwx

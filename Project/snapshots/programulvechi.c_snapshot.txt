@@ -1,6 +1,6 @@
 Filename=>programulvechi.c
-Inode=>250231254295787553
+Inode=>844424931639859
 Hardlinks=>1
-Size(bytes)=>4248
-Last modified=>18:09:20
-Permissions=>-rw-r--r--
+Size(bytes)=>4418
+Last modified=>19:58:18
+Permissions=>-rwxrwxrwx

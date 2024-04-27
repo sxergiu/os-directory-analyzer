@@ -1,6 +1,6 @@
 Filename=>ultimultest.txt
-Inode=>27133578
+Inode=>844424931639868
 Hardlinks=>1
 Size(bytes)=>49
-Last modified=>19:48:28
+Last modified=>19:58:18
 Permissions=>-rwxrwxrwx

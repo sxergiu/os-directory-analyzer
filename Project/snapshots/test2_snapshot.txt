@@ -1,6 +1,6 @@
 Filename=>test2
-Inode=>27133570
-Hardlinks=>2
-Size(bytes)=>4096
-Last modified=>18:09:20
-Permissions=>drwxr-xr-x
+Inode=>1125899908355794
+Hardlinks=>1
+Size(bytes)=>512
+Last modified=>17:01:06
+Permissions=>drwxrwxrwx

@@ -1,6 +1,6 @@
 Filename=>crown1.txt
-Inode=>27133571
+Inode=>562949954934497
 Hardlinks=>1
-Size(bytes)=>19
-Last modified=>18:09:20
-Permissions=>-rw-r--r--
+Size(bytes)=>20
+Last modified=>18:34:53
+Permissions=>-rwxrwxrwx

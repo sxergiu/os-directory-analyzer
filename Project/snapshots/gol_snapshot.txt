@@ -1,6 +1,6 @@
 Filename=>gol
-Inode=>27133584
-Hardlinks=>2
-Size(bytes)=>4096
-Last modified=>18:09:20
-Permissions=>drwxr-xr-x
+Inode=>562949954925752
+Hardlinks=>1
+Size(bytes)=>512
+Last modified=>19:59:00
+Permissions=>drwxrwxrwx

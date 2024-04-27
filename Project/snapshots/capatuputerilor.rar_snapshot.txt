@@ -1,0 +1,6 @@
+Filename=>capatuputerilor.rar
+Inode=>38280596832671721
+Hardlinks=>1
+Size(bytes)=>72
+Last modified=>10:24:00
+Permissions=>-rwxrwxrwx
