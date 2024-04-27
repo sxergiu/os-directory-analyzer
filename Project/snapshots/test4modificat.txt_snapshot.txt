@@ -1,6 +1,6 @@
 Filename=>test4modificat.txt
-Inode=>844424931639867
+Inode=>1970324837405962
 Hardlinks=>1
 Size(bytes)=>0
-Last modified=>19:58:18
+Last modified=>10:30:36
 Permissions=>-rwxrwxrwx

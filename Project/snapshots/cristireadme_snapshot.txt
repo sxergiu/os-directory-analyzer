@@ -1,6 +1,6 @@
 Filename=>cristireadme
-Inode=>562949954929313
+Inode=>2533274790826533
 Hardlinks=>1
 Size(bytes)=>0
-Last modified=>19:59:00
+Last modified=>10:30:36
 Permissions=>-rwxrwxrwx
