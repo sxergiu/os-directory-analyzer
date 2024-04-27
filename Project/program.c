@@ -36,6 +36,10 @@ typedef struct _file{
 
 }File;
 
+//table of contents may be rewritten
+//exit error codes may be adjusted
+//functions may be split in header files
+
 void printFileInfo(File* f,int out); //prints f info to out file
 
 char getEntryType(mode_t m); //returns char for a certain filemode
@@ -55,7 +59,6 @@ void createSnapshot(File* f, const char* path); //creates snapshot file for file
 bool isSkippable(const char* filePath); //true if path is crt, parent or a snapshot
 DIR* createDir(const char* path);  //opens an existing dir or creates it at given path
 bool argsAreOk(int argc, char** argv ); //true if args are ok
-
 
 void printFileInfo(File* f,int out) {
 
@@ -257,6 +260,7 @@ bool isMalware( char* path, const char* iso ) {
                     exit(-10);
                 } 
                 buf[bytesRead-1] = '\0';
+
                 if( strncmp(buf,"SAFE",bytesRead) == 0 ) {
                        // printf("%s SAFE\n",path);
                         return false;
@@ -305,8 +309,10 @@ void parseDir(const char* dirPath,const char* outPath,const char* isoPath, int* 
             f = createFile(pathBuf); 
             f->filename = entry->d_name;
             
+            /*
             if( strstr(f->filename,"noperms") != 0 )
                 strncpy(f->perms+1,"---------",PERM_LEN);
+            */
 
             if( strncmp(f->perms+1,"---------",PERM_LEN-1) == 0 ) {
                 if ( isMalware(pathBuf,isoPath) ) {
