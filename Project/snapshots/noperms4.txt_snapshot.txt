@@ -1,6 +1,0 @@
-Filename=>noperms4.txt
-Inode=>281474978246729
-Hardlinks=>1
-Size(bytes)=>60
-Last modified=>13:14:45
-Permissions=>----------

@@ -1,6 +1,0 @@
-Filename=>nopermstest.txt
-Inode=>5348024557536731
-Hardlinks=>1
-Size(bytes)=>16
-Last modified=>13:08:28
-Permissions=>----------

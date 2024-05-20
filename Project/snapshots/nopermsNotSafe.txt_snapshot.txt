@@ -1,6 +1,0 @@
-Filename=>nopermsNotSafe.txt
-Inode=>10696049115086301
-Hardlinks=>1
-Size(bytes)=>45
-Last modified=>13:05:32
-Permissions=>----------

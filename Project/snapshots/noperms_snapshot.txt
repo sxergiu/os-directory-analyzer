@@ -1,6 +1,0 @@
-Filename=>noperms
-Inode=>7881299348319402
-Hardlinks=>1
-Size(bytes)=>0
-Last modified=>12:28:01
-Permissions=>----------

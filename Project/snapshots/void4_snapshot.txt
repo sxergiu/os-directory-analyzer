@@ -1,6 +1,0 @@
-Filename=>void4
-Inode=>3659174697275442
-Hardlinks=>1
-Size(bytes)=>512
-Last modified=>10:27:50
-Permissions=>drwxrwxrwx

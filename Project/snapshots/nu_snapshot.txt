@@ -1,6 +1,0 @@
-Filename=>nu
-Inode=>1125899908347062
-Hardlinks=>1
-Size(bytes)=>512
-Last modified=>11:57:15
-Permissions=>drwxrwxrwx

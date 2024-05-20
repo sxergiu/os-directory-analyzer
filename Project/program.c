@@ -14,6 +14,12 @@
 #include <libgen.h>
 #include <fcntl.h>
 
+/*
+Fixes to be mentioned before presentation
+    The openDir modified to properly open new dirs after creating
+    The printing errors are handled so that when encountered, the file does not remain open
+*/
+
 #define PERM_LEN 11
 #define TIME_LEN 9
 #define BUFF_LEN 512
@@ -36,38 +42,56 @@ typedef struct _file{
 
 }File;
 
-//table of contents may be rewritten
-//exit error codes may be adjusted
-//functions may be split in header files
-
-void printFileInfo(File* f,int out); //prints f info to out file
+void printFileInfo(File* f,int out); //prints f info to out fd
 
 char getEntryType(mode_t m); //returns char for a certain filemode
 void getEntryPerms(File* f, mode_t m); //fills access rights field for file f
 void getEntryTime(File* f, time_t t); //fills last modified time field for file f
 
 File* createFile( const char* filepath ); // allocates a structure and inserts metadata based on path
-
 void createSnapshot(File* f, const char* path); //creates snapshot file for file f in the given path
-//File* extractSnapshotInfo(const char* snapshotPath); //allocates a structure and inserts metadata based on existing snapshot                                                  //already existing snapshot
-//File* findExistingSnapshot(const char* outPath, const char* filename); //looks in the output dir for the snapshot of
+
+File extractSnapshotInfo(const char* snapshotPath); //tries to access a file's snapshot and return its data                                         
+File findExistingSnapshot(const char* outPath, const char* filename); //looks in the output dir for the snapshot of
                                                                         //the given file and returns it
 
-//bool sameFiles(File* f1, File* f2); //true if equal metadata
-//void parseDir(const char* dirPath, const char* outDir, const char* isoDir); //parses each entry of the given path and entries of found subdirectories
-                                                        //outDir stores the snapshots
-bool isSkippable(const char* filePath); //true if path is crt, parent or a snapshot
-DIR* createDir(const char* path);  //opens an existing dir or creates it at given path
-bool argsAreOk(int argc, char** argv ); //true if args are ok
+bool sameFiles(File snapshot, File* f); //true if file and snapshot are the same
+
+void parseDir(const char* dirPath,const char* outPath,const char* isoPath, int* countMalware); 
+/*
+recursive function to the parse all subdirectories from a given dirpath, manage
+snapshots at the output path, counting the suspicious files and putting them in the
+isolated space path
+*/
+bool isSkippable(const char* filePath); //true if path is crt or parent 
+DIR* createDir(const char* path);  //opens an existing dir or creates it and opens it at given path
+bool argsAreOk(int argc, char** argv ); //true if args are given as expected
+bool isMalware( char* path, const char* iso ); //true if file at given path is dangerous, handles the situation 
 
 void printFileInfo(File* f,int out) {
 
-       dprintf(out,"Filename=>%s\n",f->filename);
-       dprintf(out,"Inode=>%lu\nHardlinks=>%lu\nSize(bytes)=>%lu\n",f->inode,f->hlinks,f->filesize);
-       dprintf(out,"Last modified=>%s\n", f->modifTime);
-       dprintf(out,"Permissions=>%s\n", f->perms);
+    if (dprintf(out, "Filename=>%s\n", f->filename) < 0) {
+        perror("Printing snapshot!");
+        close(out);
+        return;
+    }
+    if (dprintf(out, "Inode=>%lu\nHardlinks=>%lu\nSize(bytes)=>%lu\n", f->inode, f->hlinks, f->filesize) < 0) {
+        perror("Printing snapshot!");
+        close(out);
+        return;
+    }
+    if (dprintf(out, "Last modified=>%s\n", f->modifTime) < 0) {
+        perror("Printing snapshot!");
+        close(out);
+        return;
+    }
+    if (dprintf(out, "Permissions=>%s\n", f->perms) < 0) {
+        perror("Printing snapshot!");
+        close(out);
+        return;
+    }
 
-       close(out);
+    close(out);
 } 
 
 char getEntryType(mode_t m) {
@@ -305,32 +329,29 @@ void parseDir(const char* dirPath,const char* outPath,const char* isoPath, int* 
 
             snprintf(pathBuf,sizeof(pathBuf),"%s/%s", dirPath, entry->d_name );
 
-            //insert metadata
             f = createFile(pathBuf); 
             f->filename = entry->d_name;
             
-            /*
-            if( strstr(f->filename,"noperms") != 0 )
-                strncpy(f->perms+1,"---------",PERM_LEN);
-            */
-
             if( strncmp(f->perms+1,"---------",PERM_LEN-1) == 0 ) {
+
+                printf("???file with name %s is potentially dangerous???\n", f->filename);
+
                 if ( isMalware(pathBuf,isoPath) ) {
-                    printf("!!!file with name %s is potentially dangerous!!!\n", f->filename );
+                    printf("!!!file with name %s is discovered as malware!!!\n", f->filename );
                     (*countMalware)++;
                 }
             }
         
             File existingSnapshot = findExistingSnapshot(outPath,f->filename);
 
-            if( existingSnapshot.hasSnapshot == false ){
+            if( existingSnapshot.hasSnapshot == false ){  //file has no snapshot
                 printf("+++file with name %s was just added+++\n", f->filename );
                 createSnapshot(f,outPath);
             }
-            else if( sameFiles(existingSnapshot,f) ) {
+            else if( sameFiles(existingSnapshot,f) ) { //compares file with snapshot
                printf("---file with name %s is unchanged---\n", f->filename);
             }
-            else {
+            else { 
                 printf("~~~file with name %s was modified~~~\n", f->filename);
                 createSnapshot(f,outPath);
             }   
@@ -341,7 +362,8 @@ void parseDir(const char* dirPath,const char* outPath,const char* isoPath, int* 
 
             free(f);
     }
-     closedir(dir);
+
+    closedir(dir);
 }
 
 bool isSkippable(const char* filePath) {
@@ -355,6 +377,11 @@ DIR* createDir(const char* path) {
         if( mkdir( path, 0777 ) != 0 ) {
             perror("failed to create dir!");
             exit(-7);
+        } 
+        Dir = opendir(path);
+        if( Dir == NULL ) {
+            perror("failed to open created dir!");
+            exit(-8);
         } 
     }
     return Dir;
