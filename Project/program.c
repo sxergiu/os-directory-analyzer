@@ -18,6 +18,7 @@
 Fixes to be mentioned before presentation
     The openDir modified to properly open new dirs after creating
     The printing errors are handled so that when encountered, the file does not remain open
+    The call stat changed to lstat in the case symbolic links are encountered
 */
 
 #define PERM_LEN 11
@@ -133,8 +134,8 @@ File* createFile( const char* filepath ) {
 
     struct stat statVar;
 
-    if ( stat(filepath,&statVar) == -1 ) {
-                perror("stat");
+    if ( lstat(filepath,&statVar) == -1 ) {
+                perror("lstat");
                 exit(3);
     }
 
