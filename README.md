@@ -15,9 +15,3 @@
 3. A Bash script scans for potentially dangerous files.
 4. Detected files are moved to a specified isolated directory for quarantine.
 
-## Setup and Usage
-1. Clone the repository.
-2. Compile the C program:
-   ```bash
-   gcc -o directory_analyzer directory_analyzer.c
-
