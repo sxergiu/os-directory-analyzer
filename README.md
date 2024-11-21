@@ -15,3 +15,12 @@
 3. A Bash script scans for potentially dangerous files.
 4. Detected files are moved to a specified isolated directory for quarantine.
 
+## Compilation and Running
+
+```bash
+  gcc -o sx.exe program.c
+  ./sx.exe -o <output_dir> -s <iso_dir> <dirname1> <dirname2> ...
+```
+An arbitrary number of directory paths can be provided, however, the program is designed to analyze up to 10.
+
+
