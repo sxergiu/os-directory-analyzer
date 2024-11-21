@@ -20,5 +20,4 @@
 2. Compile the C program:
    ```bash
    gcc -o directory_analyzer directory_analyzer.c
- 3. Running the program:
-  ./directory_analyzer /path/to/outputdir /path/to/isolateddir /path/to/dir1 /path/to/dir2 /path/to/dir3 ...
+
